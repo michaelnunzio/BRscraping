@@ -1,6 +1,8 @@
 var express = require("express");
 var logger = require("morgan");
 var mongoose = require("mongoose");
+var exphbs = require("express-handlebars");
+const bodyParser = require("body-parser");
 
 // Our scraping tools
 var axios = require("axios");
@@ -14,7 +16,13 @@ var PORT = 3000;
 // Initialize Express
 var app = express();
 
+//*****Body Parser***/
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// parse application/json
+app.use(bodyParser.json());
 // Configure middleware
+//**body parse end***/
 
 // Use morgan logger for logging requests
 app.use(logger("dev"));
@@ -22,22 +30,28 @@ app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // Make public a static folder *Might have to get rid of this when adding handlebars*
-app.use(express.static("public"));
+// app.use(express.static("public"));
+app.use(express.static(__dirname+"/public"));
 
-//Handlebars
-// app.engine("handlebars", handlebars({ 
-//   defaultLayout: "main",
-//   layoutsDir: path.join('/views/layouts'),
-// }));
-
-// app.set("view engine", "handlebars");
-// app.set('views', path.join(__dirname, 'app', 'views'));
 
 // Connect to the Mongo DB
 mongoose.connect("mongodb://localhost/BRscraper", { useNewUrlParser: true });
 
+// handlebars
+app.engine('handlebars', exphbs({ defaultLayout: 'main'}));
+app.set('view engine', 'handlebars');
+
 // **Routes**
 // A GET route for scraping BleacherReport.com
+
+app.get('/', function(req, res){
+    
+  res.render('index');
+  
+  // res.send('hit the "/" route');
+})
+
+//**start route */
 app.get("/scrape", function(req, res) {
 
     axios.get("https://bleacherreport.com/").then(function(response) {
@@ -122,7 +136,37 @@ app.post("/articles/:id", function(req, res) {
 });
 
 
+/********/
 
+app.get('/saved', function(req, res){
+    
+  db.Article.find({saved: true}).then(function(dbArticle){
+      res.json(dbArticle);
+  }).catch(function(err){
+      res.json(err);
+  })
+})
+
+app.get('/savedArticles', function(req, res){
+
+  res.render('saved'); 
+})
+
+
+app.get('/savedArticles/:id', function(req, res){
+  
+  db.Article.update(
+      {_id: req.params.id},
+      {$set: {saved: true}},
+      function(error, edited){
+          if (error){
+              // console.log(error);
+              res.send(error);
+          }else{
+              res.send(edited);
+          }
+      })
+})
 
 // Start the server
 app.listen(PORT, function() {
