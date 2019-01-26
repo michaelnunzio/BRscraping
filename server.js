@@ -13,6 +13,16 @@ var db = require("./models");
 
 var PORT = process.env.PORT || 3000;
 
+//******MONGODB******/
+var databaseUri= "mongodb://localhost/BRscraper";
+
+if (process.env.MONGODB_URI){
+  mongoose.connect(process.env.MONGODB_URI);
+}else{
+  mongoose.connect(databaseUri)
+}
+
+
 // Initialize Express
 var app = express();
 
@@ -35,7 +45,8 @@ app.use(express.static(__dirname+"/public"));
 
 
 // Connect to the Mongo DB
-mongoose.connect("mongodb://localhost/BRscraper", { useNewUrlParser: true });
+// mongoose.connect("mongodb://localhost/BRscraper", { useNewUrlParser: true });
+
 
 // handlebars
 app.engine('handlebars', exphbs({ defaultLayout: 'main'}));
